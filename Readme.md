@@ -5,6 +5,28 @@ This demo is loosely based on
 - https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/guides/getting-started
 - https://learn.hashicorp.com/tutorials/vault/kubernetes-minikube?in=vault/kubernetes#configure-kubernetes-authentication
 
+## Vault Concepts
+
+### Sealed / Unsealed
+
+Vault is initialized in the _sealed_ state. Most Vault data is encrypted using the encryption key in the keyring; the keyring is encrypted by the master key; and the master key is encrypted by the unseal key.
+
+### Paths
+
+Vault's architecture is similar to a filesystem. Every action in Vault has a corresponding path and capability. Policies define access to these paths and capabilities, which controls a token's access to credentials in Vault.
+
+### Authentication
+
+Vault supports multiple authentication methods, which must be enabled / configured before they can be used. There are user-based auth methods and there are machine-based auth methods. Once authenticated Vault will return a token to use when interacting with Vault. The token will be mapped to a role/policy and have a lease (expiration).
+
+### Policies
+
+Policies provide a declarative way to grant or forbid access to certain paths and operations in Vault. Policies are deny by default.
+
+### Secrets Engine
+
+
+
 ## Setup
 
 ### K8s Minikube with Helm and Terraform
@@ -44,7 +66,6 @@ kubectl port-forward vault-0 8200:8200 &
 
 export VAULT_ADDR=http://localhost:8200
 export VAULT_TOKEN=$(cat cluster-keys.json | jq -r ".root_token")
-
 echo $VAULT_TOKEN | vault login -
 
 cd terraform
@@ -57,26 +78,31 @@ export TEAM_A_ROLE_ID=$(tf output engineering_team_a_role_id | tr -d '"')
 export TEAM_A_ROLE_SECRET_ID=$(tf output engineering_team_a_role_secret_id | tr -d '"')
 export TEAM_B_ROLE_ID=$(tf output engineering_team_b_role_id | tr -d '"')
 export TEAM_B_ROLE_SECRET_ID=$(tf output engineering_team_b_role_secret_id | tr -d '"')
+export TEAM_C_ROLE_ID=$(tf output engineering_team_c_role_id | tr -d '"')
+export TEAM_C_ROLE_SECRET_ID=$(tf output engineering_team_c_role_secret_id | tr -d '"')
 export VAULT_TEAM_ROLE_ID=$(tf output vault_team_role_id | tr -d '"')
 export VAULT_TEAM_ROLE_SECRET_ID=$(tf output vault_team_role_secret_id | tr -d '"')
 ```
 
 ## Make some secrets
 
-Create some secrets under the mounts (with root token)
+Seed some play data
 
 ```
-vault login
-vault kv patch engineering/favorites animal=monkeys
-vault kv patch engineering/favorites food=pizza
-vault kv patch engineering/team_a/favorites animal=lions
-vault kv patch engineering/team_a/favorites food=steak
-vault kv patch engineering/team_b/favorites animal=dogs
-vault kv patch engineering/team_b/favorites food=burgers
-vault kv patch engineering/team_c/favorites animal=sneks
-vault kv patch engineering/team_c/favorites food=chocolate
-vault kv patch vault_team/favorites animal=phish
-vault kv patch vault_team/favorites food=pancakes
+export VAULT_TOKEN=$(cat cluster-keys.json | jq -r ".root_token")
+echo $VAULT_TOKEN | vault login -
+
+vault kv put engineering/favorites animal=monkeys
+vault kv put engineering/favorites food=pizza
+vault kv put engineering/team_a/favorites animal=lions
+vault kv put engineering/team_a/favorites food=steak
+vault kv put engineering/team_b/favorites animal=dogs
+vault kv put engineering/team_b/favorites food=burgers
+vault kv put engineering/team_c/favorites animal=sneks
+vault kv put engineering/team_c/favorites food=chocolate
+vault kv put vault_team/favorites animal=phish
+vault kv put vault_team/favorites food=pancakes
+vault kv put vault_team/favorites language=go
 ```
 
 ## Access secret (simulated via approle auth method)
@@ -110,11 +136,11 @@ vault kv list engineering/team_b
 vault kv get vault_team/favorites
 ```
 
-The first succeeds because we have read permission for team_a/*
+The first and second succeed because we have read permission for engineering/+/team_a
 
-The second succeeds because we have the basic engineering policy attached to our role
+The third succeeds because we have the basic engineering policy attached to our role, which grants list access to all secrets under engineering
 
-The third command fails but does not confirm whether or not the path exists, only that the policy does not grant access to the requested path
+The fourth command fails but does not confirm whether or not the path exists, only that the policy does not grant access to the requested path. Without a policy for the vault_team mount attached to our token, vault does not confirm the requested item even exists.
 
 ### Vault Team Role
 ```
@@ -128,4 +154,4 @@ vault kv list engineering/team_b
 vault kv get vault_team/favorites
 ```
 
-All of the above succeed because we're using the vault team's vault owner role, which is our root replacement policy role. 
+All of the above succeed because we're using the vault team's vault owner role, which is our root replacement policy role.

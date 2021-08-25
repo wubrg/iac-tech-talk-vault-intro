@@ -49,3 +49,15 @@ resource "vault_approle_auth_backend_role_secret_id" "engineering_team_b" {
   backend   = vault_auth_backend.approle.path
   role_name = vault_approle_auth_backend_role.engineering_team_b.role_name
 }
+
+# Engineering Team C
+resource "vault_approle_auth_backend_role" "engineering_team_c" {
+  backend        = vault_auth_backend.approle.path
+  role_name      = "engineering_team_c"
+  token_policies = [vault_policy.engineering_team_c.name, vault_policy.engineering.name]
+}
+
+resource "vault_approle_auth_backend_role_secret_id" "engineering_team_c" {
+  backend   = vault_auth_backend.approle.path
+  role_name = vault_approle_auth_backend_role.engineering_team_c.role_name
+}

@@ -33,3 +33,12 @@ output "engineering_team_b_role_secret_id" {
   sensitive = true
   value     = vault_approle_auth_backend_role_secret_id.engineering_team_b.secret_id
 }
+
+output "engineering_team_c_role_id" {
+  value = vault_approle_auth_backend_role.engineering_team_c.role_id
+}
+
+output "engineering_team_c_role_secret_id" {
+  sensitive = true
+  value     = vault_approle_auth_backend_role_secret_id.engineering_team_c.secret_id
+}
