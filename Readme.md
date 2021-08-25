@@ -1,6 +1,8 @@
 
 # IAC Guild Vault Intro
 
+This demo aims to show some of the high-level features of Vault as well as show off the vault terraform provider to manage those features in code.
+
 This demo is loosely based on
 - https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/guides/getting-started
 - https://learn.hashicorp.com/tutorials/vault/kubernetes-minikube?in=vault/kubernetes#configure-kubernetes-authentication
